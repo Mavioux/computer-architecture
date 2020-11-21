@@ -239,14 +239,55 @@ Minor is an in-order processor model with a fixed pipeline but configurable data
 
 
 
-### α) Για το ερώτημα αυτό έγραψα ένα απλό for-loop το οποίο απαριθμεί από το 0 έως το 9 και στη συνέχεια το έκανα compile σε arm με την εντολή: arm-linux-gnueabihf-gcc --static for_loop.c -o for_loop_arm
+### a) Για το ερώτημα αυτό έγραψα ένα απλό for-loop το οποίο απαριθμεί από το 0 έως το 9 και στη συνέχεια το έκανα compile σε arm με την εντολή: arm-linux-gnueabihf-gcc --static for_loop.c -o for_loop_arm
+
+### b) Στατιστικά προσομόιωσης για τις εντολές:
+`./build/ARM/gem5.opt -d ./out/for-loop-timingSimpleCPU configs/example/se.py --cpu-type=TimingSimpleCPU --caches -c tests/test-progs/for-loop/src/for_loop_arm`
+`./build/ARM/gem5.opt -d ./out/for-loop-minorCPU configs/example/se.py --cpu-type=MinorCPU --caches -c tests/test-progs/for-loop/src/for_loop_arm`
+
 
 | Stat | TimingSimpleCPU | MinorCPU |
 | --- | :---: | :---: |
 | host_inst_rate | 378889 | 155042 |
 | host_mem_usage | 648772 | 650052 |
-| host_seconds | 0.04 |  0.10 |
-| sim_freq | 1000000000000 | 1000000000000 |
+| system.clk_domain.clock   | 1000 | 1000 |
 | sim_insts | 15197 | 15289 |
 | sim_seconds | 0.000050 | 0.000040 |
 | sim_ticks | 49982000 | 39938000 |
+
+Από τα παραπάνω χαρακτηριστικά ενδιαφέρον παρουσιάζει το sim_seconds το οποίο δείχνει πόσο χρόνο πήρε στην κάθε αρχιτεκτονική να ολοκληρώσει το πρόγραμμα.
+Ομολογουμένως, επειδή το προγραμμά μου είναι πολύ απλό η διαφορά είναι πολύ μικρή ωστόσο υπαρκτη. Αυτό συμβαίνει διότι ο TimingSimpleCPU περιμένει την μνήμη  να 
+του φέρει το δεδομένο πριν συνεχίσει με την επόμενη εντολή, πράγμα που είναι πολύ χρονοβόρο. Αυτό δεν συμβαίνει στον MinorCPU για αυτό και ολοκληρώνει τη διαδικασία
+νωρίτερα.
+
+Η χρήση της μνήμης καθώς και τα instructions που προσομοιώθηκαν είναι ελαφρώς μεγαλύτερα σε τιμές στον MinorCPU σε σχέση με τον TimingSimpleCPU, 
+ωστόσο η διαφορά είναι σε σημέιο στατιστικού λάθους. Δεν νομίζω ότι μπορεί να βγει κάποιο συμπέρασμα από αυτά τα σημεία.
+
+c) Στην παραπάνω προσομοίωση χρησιμοποίησα τον default χρονισμό του ρολογίου στα 1GHz, οπότε ας δοκιμάσουμε να τρέξουμε το ίδιο πρόγραμμα για τη μισή και τη διπλάσια συχνότητα 
+για κάθε τύπο CPU
+
+Ας ξεκινήσουμε με τον TimingSimpleCPU και ας δημιουργήσουμε τις προσομοιώσεις για 0.5GHz και 2GHz με τις εντολές:
+`./build/ARM/gem5.opt -d ./out/for-loop-timingSimpleCPU-500 configs/example/se.py --cpu-type=TimingSimpleCPU --sys-clock="0.5GHz" --caches -c tests/test-progs/for-loop/src/for_loop_arm`
+`./build/ARM/gem5.opt -d ./out/for-loop-timingSimpleCPU-2000 configs/example/se.py --cpu-type=TimingSimpleCPU --sys-clock="2GHz" --caches -c tests/test-progs/for-loop/src/for_loop_arm`
+
+| Stat | TimingSimpleCPU 0.5GHz | TimingSimpleCPU 1GHz | TimingSimpleCPU 2GHz |
+| --- | :---: | :---: | :---: |
+| host_inst_rate | 402814 | 378889 | 388422 |
+| host_mem_usage | 648772 | 648772 | 648768 |
+| system.clk_domain.clock   | 2000 | 1000 | 500 |
+| sim_insts | 15197 | 15197 | 15197 |
+| sim_seconds | 0.000056 | 0.000050 | 0.000047 |
+| sim_ticks | 56372000 | 49982000 | 46725500 |
+
+Το ενδιαφέρον στατιστικό είναι το sim_seconds από το οποίο προκύπτει όπως είναι λογικό ότι το πρόγραμμα μας τρέχει πιο γρήγορα για μεγαλύτερο χρονισμό στο ρολόι. Η διαφορά εδώ είναι μικρή λόγω της απλότητας του προβλήματος ωστόσο είναι υπαρκτή και αναλογικά μεγάλη. Παρατηρούμε επίσης ότι η διαφορά στο ρολόι και μόνο δεν επηρέασε (σε σημέιο μη στατιστικού λάθους καμία από τις υπόλοιπες παραμέτρους)
+
+| Stat | MinorCPU 0.5GHz | MinorCPU 1GHz | MinorCPU 2GHz |
+| --- | :---: | :---: | :---: |
+| host_inst_rate | 153783 | 155042 | 161992 |
+| host_mem_usage | 650048 | 650052 | 650052 |
+| system.clk_domain.clock   | 2000 | 1000 | 500 |
+| sim_insts | 15289 | 15289 | 15289 |
+| sim_seconds | 0.000046 | 0.000040 | 0.000036 |
+| sim_ticks | 45932000 | 39938000 | 36009500 |
+
+Ακριβώς όπως και στο TimingSimpleCPU το υψηλότερο ρολόι επιτυγχάνει ταχύτερη διεκπεραίωση του προγράμματος.
