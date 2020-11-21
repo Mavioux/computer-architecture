@@ -226,9 +226,27 @@ The TimingSimpleCPU is the version of SimpleCPU that uses timing memory accesses
 
 ![TimingSimpleCPU Diagram](https://www.gem5.org/assets/img/TimingSimpleCPU.jpg)
 
+##### Source: https://www.gem5.org/documentation/general_docs/cpu_models/SimpleCPU
+
+#### MinorCPU
+
+Minor is an in-order processor model with a fixed pipeline but configurable data structures and execute behaviour. It is intended to be used to model processors with strict in-order execution behaviour and allows visualisation of an instruction’s position in the pipeline through the MinorTrace/minorview.py format/tool. The intention is to provide a framework for micro-architecturally correlating the model with a particular, chosen processor with similar capabilities.
+
+##### Source: https://www.gem5.org/documentation/general_docs/cpu_models/minor_cpu
+
+
+
 
 
 
 ### α) Για το ερώτημα αυτό έγραψα ένα απλό for-loop το οποίο απαριθμεί από το 0 έως το 9 και στη συνέχεια το έκανα compile σε arm με την εντολή: arm-linux-gnueabihf-gcc --static for_loop.c -o for_loop_arm
 
-
+| Stat | TimingSimpleCPU | MinorCPU |
+| --- | :---: | :---: |
+| host_inst_rate | 378889 | 155042 |
+| host_mem_usage | 648772 | 650052 |
+| host_seconds | 0.04 |  0.10 |
+| sim_freq | 1000000000000 | 1000000000000 |
+| sim_insts | 15197 | 15289 |
+| sim_seconds | 0.000050 | 0.000040 |
+| sim_ticks | 49982000 | 39938000 |
