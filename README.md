@@ -264,6 +264,12 @@ Minor is an in-order processor model with a fixed pipeline but configurable data
 
 ##### Source: https://www.gem5.org/documentation/general_docs/cpu_models/minor_cpu
 
+#### High-Performance In-order (HPI) CPU
+
+By introducing the basic CPU models in gem5, especially MinorCPU, we have paved our way to build a High-PerformanceIn-order CPU based on the Arm architecture, and we name it HPI. The HPI CPU timing model is tuned to be representativeof a modern in-order Armv8-A implementation. In Fig4, we portrayed the major components included in our model. Weintroduce each of these components more in detail.Processor PipelineThe pipeline of our HPI CPU uses the same four-stage model as the MinorCPU
+
+##### Source: https://raw.githubusercontent.com/arm-university/arm-gem5-rsk/master/gem5_rsk.pdf
+
 
 
 
@@ -325,6 +331,78 @@ c) Στην παραπάνω προσομοίωση χρησιμοποίησα �
 | sim_ticks | 45932000 | 39938000 | 36009500 |
 
 Ακριβώς όπως και στο TimingSimpleCPU το υψηλότερο ρολόι επιτυγχάνει ταχύτερη διεκπεραίωση του προγράμματος.
+
+## Πρόγραμμα 2
+
+#### **a) Ο κώδικας που έγραψα για να δοκιμάσω την προσομοίωση κάνει το εξής:**
+   + υπολογίζει τον fibonacci αριθμό του 46 με δυναμικό προγραμματισμό  
+   
+  Το πρόγραμμα γράφτηκε σε C και στην συνέχεια με χρήση της παρακάτω εντολής κάναμε compile για να μπορούμε να το τρέξουμε με τον gem5.
+  ```c
+  arm-linux-gnueabihf-gcc --static fib.c -o fib_arm
+  ```  
+  
+  Εκτελώντας τις παρακάτω εντολές διαδοχικά, δημιουργήσαμε τις απαιτούμενες προσομοιώσεις για το πρόγραμμα μας.  
+  Αναλυτικότερα, υλοποιούν το πρόγραμμα με χρήση δύο διαφορετικών CPUs με default επιλογή για όλα τα υπόλοιπα.  
+  ```c
+  ./build/ARM/gem5.opt -d fib_res_MinorCPU configs/example/se.py --cpu-type=MinorCPU --caches -c my_tests/fib_with_dynamic_programming/fib_arm
+  ./build/ARM/gem5.opt -d fib_res_TimingSimpleCPU configs/example/se.py --cpu-type=TimingSimpleCPU --caches -c my_tests/fib_with_dynamic_programming/fib_arm
+  ```  
+   
+   
+   + **Χρόνοι εκτέλεσης προγράμματος**  
+      + Βρίσκονται στο αρχείο **stats.txt** 
+   
+   | CPU model  |  sim_seconds |
+   | --- |:---:|
+   | Minor CPU | 0.000039 |
+   | TimingSimpleCPU | 0.000047 |  
+   
+#### **b) Παρατηρώντας τα προηγούμενα, προκύπτει πως υπάρχει διαφορά χρόνων στα δυο διαφορετικά μοντέλα CPUs.**  
+   
+   Η διαφορά αυτή στους χρόνους που προέκυψαν οφείλεται στο γεγονός ότι ο TimingSimpleCPU περιμένει την προσπέλαση μνήμης να ολοκληρωθεί προτού συνεχίσει. Αντίθετα, στον MinorCPU δεν συμβαίνει αυτό με αποτέλεσμα να έχουμε ταχύτερη προσομοίωση.
+
+#### **c) Αλλαγή μνήμης και συχνότητα λειτουργίας του προγράμματος.**  
+
+Στο συγκεκριμένο ερώτημα έγιναν δύο αλλαγές που αφορούν την τεχνολογία της μνήμης και την συχνότητα ως εξής:  
++ **Αλλαγή μνήμης**  
+   Τρέχοντας την παρακάτω εντολή,    
+   ```c
+   ./build/ARM/gem5.opt configs/example/se.py --list-mem-type
+   ```
+   
+   προκύπτει η λίστα που ακολουθεί στην οποία φαίνονται όλες οι διαθέσιμες μνήμες που μπορούμε να χρησιμοποιήσουμε.  
+      
+   ![mem-list](https://github.com/lkmeta/Advanced-Computer-Architecture/blob/main/readme_imgs/mem_list.png "Mem List")
+   
+   Εμείς χρησιμοποιήσαμε την **DDR4_2400_16X4** για το παράδειγμα μας.
+   
++ **Αλλαγή συχνότητας**  
+   Η default συχνότητα που δοκιμάσαμε τo πρόγραμμα μας προηγουμένως ήταν 1GHz. Για το συγκεκριμένο ερώτημα ωστόσο, επιλέξαμε να τροποποιήσουμε την συχνότητα και να τρέξουμε δύο προσομοιώσεις με συχνότητες 0.8GHz και 1.4GHz. Αυτό υλοποιήθηκε με την προσθήκη των παρακάτω εντολών διαδοχικά.
+   ```c
+   --sys-clock="0.8GHz"
+   --sys-clock="1.4GHz"
+   ```
+   
+   
+   Στις παρακάτω εικόνες φαίνονται οι εντολές που χρησιμοποιήθηκαν για το MinorCPU μοντέλο, αντίστοιχα έγιναν και για το TimingSimpleCPU.
+   
+   ![minorcpu_08](https://github.com/lkmeta/Advanced-Computer-Architecture/blob/main/readme_imgs/minorcpu_08.png "MinorCPU 0.8")
+   
+   ![minorcpu_14](https://github.com/lkmeta/Advanced-Computer-Architecture/blob/main/readme_imgs/minorcpu_14.png "MinorCPU 1.4")
+   
+   
+   
+ ### **Πίνακας με αποτελέσματα από τα αρχεία stats.txt**  
+ 
+   | CPU model  |  sim_seconds | system.clk_domain.clock |
+   | --- |:---:| ---: |
+   | MinorCPU 0.8GHz | 0.000040 | 1250 |
+   | MinorCPU 1.4GHz | 0.000036 |  714 |
+   | TimingSimpleCPU 0.8GHz | 0.000048 | 1250 |
+   | TimingSimpleCPU 1.4GHz | 0.000045 |  714 |
+   
+   Παρατηρούμε ότι οι χρόνοι στο TimingSimpleCPU μοντέλο παραμένουν μεγαλύτεροι από το MinorCPU μοντέλο, γεγονός που είναι αναμενόμενο. Επίσης λογικό και αναμενόμενο είναι η αύξηση της συχνότητας να μας οδηγεί σε μείωση του χρόνου σε κάθε μοντέλο ξεχωριστά.
 
 ### Κριτική
 
