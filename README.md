@@ -1,10 +1,7 @@
-<center> 
-  <h1> Αρχιτεκτονική Υπολογιστών</h1>
-  <h1>  Μάριος Πάκας </h1>
-  <h1> 9498 </h1> 
-  <br>
-  <h2> Εργαστήριο 1 </h2>
-</center>
+# Αρχιτεκτονική Υπολογιστών
+## Κοσμάς Μέτα    9390
+## Μάριος Πάκας   9498
+### Εργαστήριο 1
 
 
 ---
@@ -36,9 +33,9 @@ cpu_types = {
 
 #### Για τη μνήμη cache αναφέρεται: 
 
- ```
-# Use a fixed cache line size of 64 bytes 
-cache_line_size = 64
+``` 
+# Use a fixed cache line size of 64 bytes
+cache_line_size = 64`
 ```
 
 το οποίο θέτει το μέγεθος της cache σε 64 bytes
@@ -57,6 +54,18 @@ voltage_domain=self.voltage_domain)
 ```
 # Create the off-chip memory bus.
 self.membus = SystemXBar()
+```
+
+#### και το memory mode παίρνει την τιμή "timing" προκύπτει από εδώ
+
+```
+# Create a cache hierarchy (unless we are simulating a
+        # functional CPU in atomic memory mode) for the CPU cluster
+        # and connect it to the shared memory bus.
+        if self.cpu_cluster.memoryMode() == "timing":
+            self.cpu_cluster.addL1()
+            self.cpu_cluster.addL2(self.cpu_cluster.clk_domain)
+        self.cpu_cluster.connectMemSide(self.membus)
 ```
 
 #### Οι παρακάτω εντολές προσθέτουν τους CPUs στο cluster, αυτό που με προβλημάτισε όμως είναι η αναφορά στα 1.2V, ενώ η τάση του συστήματος παραπάνω έχει οριστεί στα 3.3V.  
@@ -104,16 +113,26 @@ parser.add_argument("--mem-size", action="store", type=str,
                         help="Specify the physical memory size")
 ```
 
+#### Η default τιμή της mem_type είναι DDR3_1600_8x8.
 
+```
+    parser.add_argument("--mem-type", default="DDR3_1600_8x8",
+                        choices=ObjectList.mem_list.get_names(),
+                        help = "type of memory to use")
+```
 
-### 2)
+#### Η default τιμή της mem_size είναι 2GB.
 
-### a)
+```
+    parser.add_argument("--mem-size", action="store", type=str,
+                        default="2GB",
+                        help="Specify the physical memory size")
+```
+### 2) a)
 ### Από το stats.txt
 
 ```
 sim_freq                                 1000000000000                       # Frequency of simulated ticks
-system.clk_domain.clock                          1000                       # Clock period in ticks
 sim_insts                                        5028                       # Number of instructions simulated
 sim_ticks                                    24321000                       # Number of ticks simulated
 system.cpu_cluster.voltage_domain.voltage     1.200000                       # Voltage in Volts
@@ -124,7 +143,7 @@ system.voltage_domain.voltage                3.300000                       # Vo
 
 ### Από το config.json
 
-Με σχόλιο αναφέρομαι στα κομμάτια του config που επιβεβαιώνουν το stats.txt
+Με σχόλιο αναφερόμαστε στα κομμάτια του config που επιβεβαιώνουν το stats.txt
 
 ```
 "system": {
@@ -140,6 +159,7 @@ system.voltage_domain.voltage                3.300000                       # Vo
             "cxx_class": "SrcClockDomain",
             "name": "clk_domain",
             "path": "system.clk_domain",
+            # Χρονισμός ρολογιού
             "clock": [
                 1000
             ],
@@ -151,7 +171,7 @@ system.voltage_domain.voltage                3.300000                       # Vo
 	"cpu_cluster": {
 		"cpus": [
                 {
-	              # Type of CPU
+	                # Type of CPU
                     "type": "MinorCPU",
                     "cxx_class": "MinorCPU",
 		},
@@ -162,13 +182,14 @@ system.voltage_domain.voltage                3.300000                       # Vo
             "name": "voltage_domain",
             "path": "system.voltage_domain",
             "eventq_index": 0,
-	           # Voltage 3.3 V
+	        # Voltage 3.3 V
             "voltage": [
                 3.3
             ]
         },
 	# L2
 	"l2": {
+                # Τύπος Cache
                 "type": "Cache",
                 "cxx_class": "Cache",
                 "name": "l2",
@@ -187,19 +208,24 @@ system.voltage_domain.voltage                3.300000                       # Vo
 ### Stats.txt
 
 ```
-sim_insts                                        5028                       # Number of instructions simulated
+Committed Instructions: 5028
 system.cpu_cluster.cpus.committedInsts           5028                       # Number of instructions committed
+system.cpu_cluster.cpus.committedOps             5834                       # Number of ops (including micro ops) committed
 ```
 
-Βλέπουμε ότι ο αριθμός των simulated instructions ταυτίζεται με τον αριθμό των committed instructions!
+Η διαφορά ανάμεσα σε αυτούς τους δύο αριθμούς έγκειται στο γεγονός ότι η πρώτη τιμή αναφέρεται μόνο στις εντολές που απαιτούνται για να εκτελεστεί το πρόγραμμα σε c, ενώ η δεύτερη περιλαμβάνει και τα instructions που απαιτούνται για την εκκίνηση του προσομοιωτή.
 
 ### c) Στο stats.txt αναγράφεται το εξής:
 
 ```
-system.cpu_cluster.l2.demand_misses::total          479                       # number of demand (read+write) misses
+system.cpu_cluster.l2.demand_accesses::.cpu_cluster.cpus.inst          332                       # number of demand (read+write) accesses
+system.cpu_cluster.l2.demand_accesses::.cpu_cluster.cpus.data          147                       # number of demand (read+write) accesses
+system.cpu_cluster.l2.demand_accesses::total          479                       # number of demand (read+write) accesses
 ```
 
-το οποίο δείχνει τον αριθμών των misses της l2 cache
+Έγιναν συνολικά 479 accesses στην l2 μνήμη όπως φαίνεται από τα στατιστικά του gem5.
+Ένας άλλος τρόπος να υπολογιστεί θα ήταν από τον τύπο: (to-do)
+Καθώς επίσης και από: (to-do)
 
 
 ### 3) 
@@ -241,13 +267,17 @@ Minor is an in-order processor model with a fixed pipeline but configurable data
 
 
 
+## Για τα επόμενα ερωτήματα έχουμε γράψει δύο προγράμματα διότι δεν ήμασταν σίγουροι αν έπρεπε να παραδώσουμε κοινό report.
 
+## Πρόγραμμα 1
 
-### a) Για το ερώτημα αυτό έγραψα ένα απλό for-loop το οποίο απαριθμεί από το 0 έως το 9 και στη συνέχεια το έκανα compile σε arm με την εντολή: arm-linux-gnueabihf-gcc --static for_loop.c -o for_loop_arm
+### a) 
+ Ένα απλό for-loop το οποίο απαριθμεί από το 0 έως το 9 και στη συνέχεια το έκανα compile σε arm με την εντολή: 
+ `arm-linux-gnueabihf-gcc --static for_loop.c -o for_loop_arm`
 
-### b) Στατιστικά προσομόιωσης για τις εντολές:
-`./build/ARM/gem5.opt -d ./out/for-loop-timingSimpleCPU configs/example/se.py --cpu-type=TimingSimpleCPU --caches -c tests/test-progs/for-loop/src/for_loop_arm`
-`./build/ARM/gem5.opt -d ./out/for-loop-minorCPU configs/example/se.py --cpu-type=MinorCPU --caches -c tests/test-progs/for-loop/src/for_loop_arm`
+### b) Στατιστικά προσομοίωσης για τις εντολές:
+```./build/ARM/gem5.opt -d ./out/for-loop-timingSimpleCPU configs/example/se.py --cpu-type=TimingSimpleCPU --caches -c tests/test-progs/for-loop/src/for_loop_arm```
+```./build/ARM/gem5.opt -d ./out/for-loop-minorCPU configs/example/se.py --cpu-type=MinorCPU --caches -c tests/test-progs/for-loop/src/for_loop_arm```
 
 
 | Stat | TimingSimpleCPU | MinorCPU |
@@ -260,7 +290,7 @@ Minor is an in-order processor model with a fixed pipeline but configurable data
 | sim_ticks | 49982000 | 39938000 |
 
 Από τα παραπάνω χαρακτηριστικά ενδιαφέρον παρουσιάζει το sim_seconds το οποίο δείχνει πόσο χρόνο πήρε στην κάθε αρχιτεκτονική να ολοκληρώσει το πρόγραμμα.
-Ομολογουμένως, επειδή το προγραμμά μου είναι πολύ απλό η διαφορά είναι πολύ μικρή ωστόσο υπαρκτή. Αυτό συμβαίνει διότι ο TimingSimpleCPU περιμένει την μνήμη να 
+Ομολογουμένως, επειδή το προγραμμά μου είναι πολύ απλό η διαφορά είναι πολύ μικρή ωστόσο υπαρκτή. Αυτό συμβαίνει διότι ο TimingSimpleCPU περιμένει την μνήμη  να 
 του φέρει το δεδομένο πριν συνεχίσει με την επόμενη εντολή, πράγμα που είναι πολύ χρονοβόρο. Αυτό δεν συμβαίνει στον MinorCPU για αυτό και ολοκληρώνει τη διαδικασία
 νωρίτερα.
 
@@ -271,8 +301,8 @@ c) Στην παραπάνω προσομοίωση χρησιμοποίησα �
 για κάθε τύπο CPU.
 
 Ας ξεκινήσουμε με τον TimingSimpleCPU και ας δημιουργήσουμε τις προσομοιώσεις για 0.5GHz και 2GHz με τις εντολές:
-`./build/ARM/gem5.opt -d ./out/for-loop-timingSimpleCPU-500 configs/example/se.py --cpu-type=TimingSimpleCPU --sys-clock="0.5GHz" --caches -c tests/test-progs/for-loop/src/for_loop_arm`
-`./build/ARM/gem5.opt -d ./out/for-loop-timingSimpleCPU-2000 configs/example/se.py --cpu-type=TimingSimpleCPU --sys-clock="2GHz" --caches -c tests/test-progs/for-loop/src/for_loop_arm`
+```./build/ARM/gem5.opt -d ./out/for-loop-timingSimpleCPU-500 configs/example/se.py --cpu-type=TimingSimpleCPU --sys-clock="0.5GHz" --caches -c tests/test-progs/for-loop/src/for_loop_arm```
+```./build/ARM/gem5.opt -d ./out/for-loop-timingSimpleCPU-2000 configs/example/se.py --cpu-type=TimingSimpleCPU --sys-clock="2GHz" --caches -c tests/test-progs/for-loop/src/for_loop_arm```
 
 | Stat | TimingSimpleCPU 0.5GHz | TimingSimpleCPU 1GHz | TimingSimpleCPU 2GHz |
 | --- | :---: | :---: | :---: |
@@ -295,7 +325,6 @@ c) Στην παραπάνω προσομοίωση χρησιμοποίησα �
 | sim_ticks | 45932000 | 39938000 | 36009500 |
 
 Ακριβώς όπως και στο TimingSimpleCPU το υψηλότερο ρολόι επιτυγχάνει ταχύτερη διεκπεραίωση του προγράμματος.
-
 
 ### Κριτική
 
