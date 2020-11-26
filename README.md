@@ -264,6 +264,12 @@ Minor is an in-order processor model with a fixed pipeline but configurable data
 
 ##### Source: https://www.gem5.org/documentation/general_docs/cpu_models/minor_cpu
 
+#### High-Performance In-order (HPI) CPU
+
+By introducing the basic CPU models in gem5, especially MinorCPU, we have paved our way to build a High-PerformanceIn-order CPU based on the Arm architecture, and we name it HPI. The HPI CPU timing model is tuned to be representativeof a modern in-order Armv8-A implementation. In Fig4, we portrayed the major components included in our model. Weintroduce each of these components more in detail.Processor PipelineThe pipeline of our HPI CPU uses the same four-stage model as the MinorCPU
+
+##### Source: https://raw.githubusercontent.com/arm-university/arm-gem5-rsk/master/gem5_rsk.pdf
+
 
 
 
