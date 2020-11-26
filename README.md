@@ -1,10 +1,7 @@
-<center> 
-  <h1> Αρχιτεκτονική Υπολογιστών</h1>
-  <h1>  Μάριος Πάκας </h1>
-  <h1> 9498 </h1> 
-  <br>
-  <h2> Εργαστήριο 1 </h2>
-</center>
+# Αρχιτεκτονική Υπολογιστών
+## Κοσμάς Μέτα    9390
+## Μάριος Πάκας   9498
+### Εργαστήριο 1
 
 
 ---
@@ -36,9 +33,9 @@ cpu_types = {
 
 #### Για τη μνήμη cache αναφέρεται: 
 
- ```
-# Use a fixed cache line size of 64 bytes 
-cache_line_size = 64
+``` 
+# Use a fixed cache line size of 64 bytes
+cache_line_size = 64`
 ```
 
 το οποίο θέτει το μέγεθος της cache σε 64 bytes
@@ -57,6 +54,18 @@ voltage_domain=self.voltage_domain)
 ```
 # Create the off-chip memory bus.
 self.membus = SystemXBar()
+```
+
+#### και το memory mode παίρνει την τιμή "timing" προκύπτει από εδώ
+
+```
+# Create a cache hierarchy (unless we are simulating a
+        # functional CPU in atomic memory mode) for the CPU cluster
+        # and connect it to the shared memory bus.
+        if self.cpu_cluster.memoryMode() == "timing":
+            self.cpu_cluster.addL1()
+            self.cpu_cluster.addL2(self.cpu_cluster.clk_domain)
+        self.cpu_cluster.connectMemSide(self.membus)
 ```
 
 #### Οι παρακάτω εντολές προσθέτουν τους CPUs στο cluster, αυτό που με προβλημάτισε όμως είναι η αναφορά στα 1.2V, ενώ η τάση του συστήματος παραπάνω έχει οριστεί στα 3.3V.  
@@ -104,27 +113,37 @@ parser.add_argument("--mem-size", action="store", type=str,
                         help="Specify the physical memory size")
 ```
 
+#### Η default τιμή της mem_type είναι DDR3_1600_8x8.
 
+```
+    parser.add_argument("--mem-type", default="DDR3_1600_8x8",
+                        choices=ObjectList.mem_list.get_names(),
+                        help = "type of memory to use")
+```
 
-### 2)
+#### Η default τιμή της mem_size είναι 2GB.
 
-### a)
+```
+    parser.add_argument("--mem-size", action="store", type=str,
+                        default="2GB",
+                        help="Specify the physical memory size")
+```
+### 2) a)
 ### Από το stats.txt
 
 ```
 sim_freq                                 1000000000000                       # Frequency of simulated ticks
-system.clk_domain.clock                          1000                       # Clock period in ticks
 sim_insts                                        5028                       # Number of instructions simulated
 sim_ticks                                    24321000                       # Number of ticks simulated
 system.cpu_cluster.voltage_domain.voltage     1.200000                       # Voltage in Volts
 system.voltage_domain.voltage                3.300000                       # Voltage in Volts
 ```
 
-Από τα παραπάνω συμπεραίνουμε ότι η συχνότητα του επεξεργαστή είναι 1GHz(μιάς και η περίοδος είναι 1000 σε ticks), ο αριθμός των εντολών που προσομοιώθηκαν είναι 5028, τα ticks που προσομοιώθηκαν ειναι 24321000, η τάση του επεξεργαστή είναι 3.3V και το cluster voltage, όπως δηλώνεται και στο starter_se.py είναι 1.2V.
+Από τα παραπάνω συμπεραίνουμε ότι η συχνότητα του επεξεργαστή είναι 1GHz, ο αριθμός των εντολών που προσομοιώθηκαν είναι 5028, τα ticks που προσομοιώθηκαν ειναι 24321000, η τάση του επεξεργαστή είναι 3.3V και το cluster voltage, όπως δηλώνεται και στο starter_se.py είναι 1.2V.
 
 ### Από το config.json
 
-Με σχόλιο αναφέρομαι στα κομμάτια του config που επιβεβαιώνουν το stats.txt
+Με σχόλιο αναφερόμαστε στα κομμάτια του config που επιβεβαιώνουν το stats.txt
 
 ```
 "system": {
@@ -140,6 +159,7 @@ system.voltage_domain.voltage                3.300000                       # Vo
             "cxx_class": "SrcClockDomain",
             "name": "clk_domain",
             "path": "system.clk_domain",
+            # Χρονισμός ρολογιού
             "clock": [
                 1000
             ],
@@ -151,7 +171,7 @@ system.voltage_domain.voltage                3.300000                       # Vo
 	"cpu_cluster": {
 		"cpus": [
                 {
-	              # Type of CPU
+	                # Type of CPU
                     "type": "MinorCPU",
                     "cxx_class": "MinorCPU",
 		},
@@ -162,13 +182,14 @@ system.voltage_domain.voltage                3.300000                       # Vo
             "name": "voltage_domain",
             "path": "system.voltage_domain",
             "eventq_index": 0,
-	           # Voltage 3.3 V
+	        # Voltage 3.3 V
             "voltage": [
                 3.3
             ]
         },
 	# L2
 	"l2": {
+                # Τύπος Cache
                 "type": "Cache",
                 "cxx_class": "Cache",
                 "name": "l2",
@@ -187,19 +208,24 @@ system.voltage_domain.voltage                3.300000                       # Vo
 ### Stats.txt
 
 ```
-sim_insts                                        5028                       # Number of instructions simulated
+Committed Instructions: 5028
 system.cpu_cluster.cpus.committedInsts           5028                       # Number of instructions committed
+system.cpu_cluster.cpus.committedOps             5834                       # Number of ops (including micro ops) committed
 ```
 
-Βλέπουμε ότι ο αριθμός των simulated instructions ταυτίζεται με τον αριθμό των committed instructions!
+Η διαφορά ανάμεσα σε αυτούς τους δύο αριθμούς έγκειται στο γεγονός ότι η πρώτη τιμή αναφέρεται μόνο στις εντολές που απαιτούνται για να εκτελεστεί το πρόγραμμα σε c, ενώ η δεύτερη περιλαμβάνει και τα instructions που απαιτούνται για την εκκίνηση του προσομοιωτή.
 
 ### c) Στο stats.txt αναγράφεται το εξής:
 
 ```
-system.cpu_cluster.l2.demand_misses::total          479                       # number of demand (read+write) misses
+system.cpu_cluster.l2.demand_accesses::.cpu_cluster.cpus.inst          332                       # number of demand (read+write) accesses
+system.cpu_cluster.l2.demand_accesses::.cpu_cluster.cpus.data          147                       # number of demand (read+write) accesses
+system.cpu_cluster.l2.demand_accesses::total          479                       # number of demand (read+write) accesses
 ```
 
-το οποίο δείχνει τον αριθμών των misses της l2 cache
+Έγιναν συνολικά 479 accesses στην l2 μνήμη όπως φαίνεται από τα στατιστικά του gem5.
+Ένας άλλος τρόπος να υπολογιστεί θα ήταν από τον τύπο: (to-do)
+Καθώς επίσης και από: (to-do)
 
 
 ### 3) 
@@ -241,13 +267,17 @@ Minor is an in-order processor model with a fixed pipeline but configurable data
 
 
 
+## Για τα επόμενα ερωτήματα έχουμε γράψει δύο προγράμματα διότι δεν ήμασταν σίγουροι αν έπρεπε να παραδώσουμε κοινό report.
 
+## Πρόγραμμα 1
 
-### a) Για το ερώτημα αυτό έγραψα ένα απλό for-loop το οποίο απαριθμεί από το 0 έως το 9 και στη συνέχεια το έκανα compile σε arm με την εντολή: arm-linux-gnueabihf-gcc --static for_loop.c -o for_loop_arm
+### a) 
+ Ένα απλό for-loop το οποίο απαριθμεί από το 0 έως το 9 και στη συνέχεια το έκανα compile σε arm με την εντολή: 
+ `arm-linux-gnueabihf-gcc --static for_loop.c -o for_loop_arm`
 
-### b) Στατιστικά προσομόιωσης για τις εντολές:
-`./build/ARM/gem5.opt -d ./out/for-loop-timingSimpleCPU configs/example/se.py --cpu-type=TimingSimpleCPU --caches -c tests/test-progs/for-loop/src/for_loop_arm`
-`./build/ARM/gem5.opt -d ./out/for-loop-minorCPU configs/example/se.py --cpu-type=MinorCPU --caches -c tests/test-progs/for-loop/src/for_loop_arm`
+### b) Στατιστικά προσομοίωσης για τις εντολές:
+```./build/ARM/gem5.opt -d ./out/for-loop-timingSimpleCPU configs/example/se.py --cpu-type=TimingSimpleCPU --caches -c tests/test-progs/for-loop/src/for_loop_arm```
+```./build/ARM/gem5.opt -d ./out/for-loop-minorCPU configs/example/se.py --cpu-type=MinorCPU --caches -c tests/test-progs/for-loop/src/for_loop_arm```
 
 
 | Stat | TimingSimpleCPU | MinorCPU |
@@ -260,19 +290,19 @@ Minor is an in-order processor model with a fixed pipeline but configurable data
 | sim_ticks | 49982000 | 39938000 |
 
 Από τα παραπάνω χαρακτηριστικά ενδιαφέρον παρουσιάζει το sim_seconds το οποίο δείχνει πόσο χρόνο πήρε στην κάθε αρχιτεκτονική να ολοκληρώσει το πρόγραμμα.
-Ομολογουμένως, επειδή το προγραμμά μου είναι πολύ απλό η διαφορά είναι πολύ μικρή ωστόσο υπαρκτή. Αυτό συμβαίνει διότι ο TimingSimpleCPU περιμένει την μνήμη να 
+Ομολογουμένως, επειδή το προγραμμά μου είναι πολύ απλό η διαφορά είναι πολύ μικρή ωστόσο υπαρκτη. Αυτό συμβαίνει διότι ο TimingSimpleCPU περιμένει την μνήμη  να 
 του φέρει το δεδομένο πριν συνεχίσει με την επόμενη εντολή, πράγμα που είναι πολύ χρονοβόρο. Αυτό δεν συμβαίνει στον MinorCPU για αυτό και ολοκληρώνει τη διαδικασία
 νωρίτερα.
 
 Η χρήση της μνήμης καθώς και τα instructions που προσομοιώθηκαν είναι ελαφρώς μεγαλύτερα σε τιμές στον MinorCPU σε σχέση με τον TimingSimpleCPU, 
-ωστόσο η διαφορά είναι σε σημείο στατιστικού λάθους. Δεν νομίζω ότι μπορεί να βγει κάποιο συμπέρασμα από αυτά τα κομμάτια.
+ωστόσο η διαφορά είναι σε σημείο στατιστικού λάθους. Δεν νομίζω ότι μπορεί να βγει κάποιο συμπέρασμα από αυτά τα σημεία.
 
 c) Στην παραπάνω προσομοίωση χρησιμοποίησα τον default χρονισμό του ρολογίου στα 1GHz, οπότε ας δοκιμάσουμε να τρέξουμε το ίδιο πρόγραμμα για τη μισή και τη διπλάσια συχνότητα 
-για κάθε τύπο CPU.
+για κάθε τύπο CPU
 
 Ας ξεκινήσουμε με τον TimingSimpleCPU και ας δημιουργήσουμε τις προσομοιώσεις για 0.5GHz και 2GHz με τις εντολές:
-`./build/ARM/gem5.opt -d ./out/for-loop-timingSimpleCPU-500 configs/example/se.py --cpu-type=TimingSimpleCPU --sys-clock="0.5GHz" --caches -c tests/test-progs/for-loop/src/for_loop_arm`
-`./build/ARM/gem5.opt -d ./out/for-loop-timingSimpleCPU-2000 configs/example/se.py --cpu-type=TimingSimpleCPU --sys-clock="2GHz" --caches -c tests/test-progs/for-loop/src/for_loop_arm`
+```./build/ARM/gem5.opt -d ./out/for-loop-timingSimpleCPU-500 configs/example/se.py --cpu-type=TimingSimpleCPU --sys-clock="0.5GHz" --caches -c tests/test-progs/for-loop/src/for_loop_arm```
+```./build/ARM/gem5.opt -d ./out/for-loop-timingSimpleCPU-2000 configs/example/se.py --cpu-type=TimingSimpleCPU --sys-clock="2GHz" --caches -c tests/test-progs/for-loop/src/for_loop_arm```
 
 | Stat | TimingSimpleCPU 0.5GHz | TimingSimpleCPU 1GHz | TimingSimpleCPU 2GHz |
 | --- | :---: | :---: | :---: |
@@ -283,7 +313,7 @@ c) Στην παραπάνω προσομοίωση χρησιμοποίησα �
 | sim_seconds | 0.000056 | 0.000050 | 0.000047 |
 | sim_ticks | 56372000 | 49982000 | 46725500 |
 
-Το ενδιαφέρον στατιστικό είναι το sim_seconds από το οποίο προκύπτει όπως είναι λογικό ότι το πρόγραμμα μας τρέχει πιο γρήγορα για μεγαλύτερο χρονισμό στο ρολόι. Η διαφορά εδώ είναι μικρή λόγω της απλότητας του προβλήματος ωστόσο είναι υπαρκτή και αναλογικά μεγάλη. Παρατηρούμε επίσης ότι η διαφορά στο ρολόι και μόνο δεν επηρέασε (σε σημείο μη στατιστικού λάθους) καμία από τις υπόλοιπες παραμέτρους.
+Το ενδιαφέρον στατιστικό είναι το sim_seconds από το οποίο προκύπτει όπως είναι λογικό ότι το πρόγραμμα μας τρέχει πιο γρήγορα για μεγαλύτερο χρονισμό στο ρολόι. Η διαφορά εδώ είναι μικρή λόγω της απλότητας του προβλήματος ωστόσο είναι υπαρκτή και αναλογικά μεγάλη. Παρατηρούμε επίσης ότι η διαφορά στο ρολόι και μόνο δεν επηρέασε (σε σημέιο μη στατιστικού λάθους καμία από τις υπόλοιπες παραμέτρους)
 
 | Stat | MinorCPU 0.5GHz | MinorCPU 1GHz | MinorCPU 2GHz |
 | --- | :---: | :---: | :---: |
@@ -295,27 +325,3 @@ c) Στην παραπάνω προσομοίωση χρησιμοποίησα �
 | sim_ticks | 45932000 | 39938000 | 36009500 |
 
 Ακριβώς όπως και στο TimingSimpleCPU το υψηλότερο ρολόι επιτυγχάνει ταχύτερη διεκπεραίωση του προγράμματος.
-
-
-### Κριτική
-
-Η κριτική αυτή είναι από τη ματιά κάποιου ο οποίος ενδιαφερόταν για την αρχιτεκτονική υπολογιστών (λίγο πιο συγκεκριμένα για τους επεξεργαστές) από τότε που μπήκε στη σχολή. Οπότε είχα ένα ιδιαίτερο κίνητρο να ψάξω μερικά πράγματα λίγο περισσότερο γεγονός που με οδήγησε να ασχοληθώ και με το Getting started tutorial από το επίσημο documentation του gem5 (https://www.gem5.org/documentation/learning_gem5/introduction/), το οποίο με βοήθησε να καταλάβω τη χρήση ορισμένων εντολών στο python config file. Ας πάρουμε όμως τα πράγματα από την αρχή!
-
-Το πρώτο πράγμα που έκανα ήταν να διαβάσω το προηγούμενο pdf με τις γενικότερες πληροφορίες για το gem5, το οποίο μου φάνηκε μεν ενδιαφέρον, αλλά γρήγορα αδυνατούσα να το παρακολουθήσω και να το καταλαβαίνω όντως. Οπότε προχώρησα στο επόμενο pdf το οποίο περιείχε τις οδηγίες εγκατάστασης τις οποίες και ακολούθησα ευλαβικά. Ένα μου θέμα ήταν ότι μέσα από το pdf δεν μπορούσα να κάνω copy paste τις εντολές στο terminal (διότι τις έσπαγε ο τρόπος αντιγραφής κατά την επικόλληση) και αναγκάστηκα να τις γράψω. Μικρό το κακό απλώς ενέχει πάντα ο κίνδυνος του τυπογραφικού. Από αυτές, η μόνη με την οποία αντιμετώπισα θέμα ήταν η εντολη protobuf την οποία δεν αναγνώριζε ότι υπάρχει. Ωστόσο παρατήρησα ότι δεν μου χρειάστηκε κατά τη διάρκεια του installation για αυτό και δεν με ασχολήθηκα περισσότερο. Αν στο μέλλον χρειαστέι θα την προσθέσω. Το άλλο πρόβλημα που αντιμετώπισα είναι ότι η ύπαρξη του προγράμματος anaconda στον υπολογιστή μου μπέρδευε το gem κατά το build, ως προς το ποιά έκδοση της python να χρησιμοποιεί. Αυτό λύθηκε με απεγκατάσταση του anaconda, μιας και δεν το χρειαζόμουν πλέον. 
-
-Τέλος, μια παρατήρηση που έχω να κάνω σχετικά με την εγκατάσταση θα ήταν στην εντολή .
-`sconsbuild/ARM/gem5.opt -jΝ` 
-όπου ως Ν αναφέρετε τον αριθμό των επεξεργαστών και ίσως να θέλατε να το αλλάξετε σε αριθμό πυρήνων του επεξεργαστή/ων
-Στο getting started tutorial που ανέφερα παραπάνω προτείνει να τεθεί η τιμή αυτή στον αριθμό των πυρήνων του συστήματος + 1.
-
-Στο build του ARM έχω θέσει λοιπόν N = 1, ωστόσο για το X86 (μιας και ακολούθησα και εκείνο το tutorial για να καταλάβω καλύτερα τι κάνω) το έθεσα το Ν = 5.
-
-Το επόμενο πράγμα που με προβλημάτισε είναι στην αναζήτηση των αρχείων config και stats. Ακριβώς επειδή το περιεχόμενο των αρχείων ήταν τεράστιο και εγώ μη εξοικειωμένος ακόμα με αυτά δεν είμαι βέβαιος αν έχω κοιτάξει τα σωστά κομμάτια για να απαντήσω στις παραπάνω ερωτήσεις. Ήταν ενδιαφέρον από τη μία να καθίσω να κοιτάξω ολόκληρο το αρχείο, ώστε να έχω μια ιδέα τι περιέχεται γενικά μέσα σε αυτά, ωστόσο αυτό που θα ήθελα (πιθανόν να γίνει από κοντά στο εργαστήριο) θα ήταν μια επιβεβαίωση ότι βρήκα τα κατάλληλα σημεία ή μια υπόδειξη για ό,τι μου ξέφυγε.
-
-Τελευταία παρατήρηση θα ήταν ότι αυτή η εντολή `./build/ARM/gem5.opt configs/example/se.py --cpu=MinorCPU --caches tests/test-progs/hello/bin/arm/linux/hello` δεν έτρεχε, απαιτούταν η προσθήκη του  '-c' `./build/ARM/gem5.opt configs/example/se.py --cpu=MinorCPU --caches -c tests/test-progs/hello/bin/arm/linux/hello`.
-
-Κάτι το οποίο βρήκα ιδιαίτερα βοηθητικό (και ίσως να μην συμφωνούν πολλοί με αυτό) είναι ότι μας δώσατε ένα τεκμηριωμένο pdf με οδηγίες οι οποίες (με εξαίρεση ένα δύο σημεία) ήταν αρκετές ώστε να μας εξοικειώσουν με τα βασικά, περιείχαν υπερσυνδέσμους στο documentation για καλύτερη κατανόηση και γενικότερα μας κράτησαν από το χεράκι τόσο όσο έπρεπε, ενώ συγχρόνως μας θέταν προβλήματα τα οποία δεν ήταν προφανή μα ούτε και αδύνατο να φανταστούμε πως να συνεχίσουμε. Προσωπικά αυτή η προσέγγιση με βοήθησε διότι καθόλη την ενασχόληση μου με το gem5 (ακόμα και κατά τη συγγραφή αυτού το ReadMe) σκεφτόμουν συνειδητά τι έκανα, πώς λειτουργεί αυτό που εξετάζω τώρα, δίχως να ακολουθώ παθητικά εντολές. Προφανώς σε καμία περίπτωση δεν νιώθω ακομα σε καλό επίπεδο κατανόηση όλων των λειτουργιών του gem, ωστόσο πιστεύω ότι η προσέγγιση αυτή μας επιτρέπει να καταλαβαίνουμε πλήρως τις εντολές και τις διαδικασίες που ακολουθήσαμε για το πρώτο εργαστήριο.
-
-Ιδιαίτερα ενδιαφέρουσα βρήκα επίσης την συγγραφή ενος Makefile αρχείου το οποίο παράγει binaries ανάλογα με την πλατφόρμα για την οποία προορίζεται (πχ ARM, X86). Δυστυχώς δεν μπόρεσα να το υλοποιήσω ακόμα μόνος μου και να το συμπεριλάβω στο δικό μου Makefile, ωστόσο τώρα που ξέρω πως γίνεται μου δίνεται το έναυσμα να το ψάξω περισσότερο.
-
-Σε γενικές γραμμές, δεν θεωρώ την εργασία αυτή εύκολη, αλλά σίγουρα δεν τη θεωρώ και ακατόρθωτη. Εφόσον κάποιος ξεπεράσει πιθανά προβλήματα κατά την εγκατάσταση νομίζει μπορεί να εκτιμήσει την δυσκολία που προκύπτει μέσα από τα ερωτήματα, ιδίως αν ενδιαφέρεται όντως να ασχολήθει με την αρχιτεκτονική υπολογιστών.
